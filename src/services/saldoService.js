@@ -1,5 +1,6 @@
 const { Op } = require("sequelize");
 const Saldo = require("../models/saldo");
+const moment = require("moment");
 
 class SaldoService {
   // Create data baru
@@ -11,28 +12,23 @@ class SaldoService {
   async getAll(filters) {
     const where = {};
 
-    if (filters.tanggal) {
-      where.tanggal = filters.tanggal;
-    }
+    if (filters.start && filters.end) {
+      // pastikan format tanggal valid
+      const startDate = moment(filters.start, "YYYY-MM-DD").format(
+        "YYYY-MM-DD"
+      );
+      const endDate = moment(filters.end, "YYYY-MM-DD").format("YYYY-MM-DD");
 
-    if (filters.bulan && filters.tahun) {
       where.tanggal = {
-        [Op.between]: [
-          `${filters.tahun}-${filters.bulan}-01`,
-          `${filters.tahun}-${filters.bulan}-31`
-        ],
-      };
-    }
-
-    if (filters.tahun && !filters.bulan) {
-      where.tanggal = {
-        [Op.between]: [`${filters.tahun}-01-01`, `${filters.tahun}-12-31`],
+        [Op.between]: [startDate, endDate],
       };
     }
 
     return await Saldo.findAll({
       where,
-      order: [["tanggal", "ASC"], ["waktu", "ASC"]],
+      order: [
+        ["tanggal", "ASC"],
+      ],
     });
   }
 

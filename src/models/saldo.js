@@ -11,10 +11,6 @@ const Saldo = sequelize.define("Saldo", {
     type: DataTypes.DATEONLY,
     allowNull: false,
   },
-  waktu: {
-    type: DataTypes.TIME,
-    allowNull: false,
-  },
   penerimaan_rkud: {
     type: DataTypes.DECIMAL(20, 2),
     defaultValue: 0,

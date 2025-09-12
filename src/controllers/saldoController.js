@@ -1,4 +1,5 @@
 const saldoService = require("../services/saldoService");
+const { enrichSaldo } = require("../utils/helper");
 const { successResponse, errorResponse } = require("../utils/response");
 
 class SaldoController {
@@ -17,7 +18,9 @@ class SaldoController {
     try { 
       const filters = req.query; // ?tanggal=...&bulan=...&tahun=...
       const data = await saldoService.getAll(filters);
-      return successResponse(res, data);
+
+      const enriched = data.map(enrichSaldo);
+      return successResponse(res, enriched);
     } catch (err) {
       return errorResponse(res, err.message);
     }
@@ -28,7 +31,8 @@ class SaldoController {
     try {
       const data = await saldoService.getById(req.params.id);
       if (!data) return errorResponse(res, "Data tidak ditemukan", 404);
-      return successResponse(res, data);
+      const enriched = enrichSaldo(data);
+      return successResponse(res, enriched);
     } catch (err) {
       return errorResponse(res, err.message);
     }
