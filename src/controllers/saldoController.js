@@ -1,5 +1,10 @@
 const saldoService = require("../services/saldoService");
-const { enrichSaldo, parseNumber, formatRupiah } = require("../utils/helper");
+const {
+  enrichSaldo,
+  parseNumber,
+  formatRupiah,
+  drawRow,
+} = require("../utils/helper");
 const { successResponse, errorResponse } = require("../utils/response");
 const PDFDocument = require("pdfkit-table");
 const moment = require("moment");
@@ -83,18 +88,34 @@ class SaldoController {
       );
       doc.pipe(res);
 
+      // Cari periode
+      let startDate = start;
+      let endDate = end;
+
+      if ((!startDate || !endDate) && filtered.length > 0) {
+        const sorted = [...filtered].sort(
+          (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
+        );
+        startDate = sorted[0].tanggal; // tanggal paling awal
+        endDate = sorted[sorted.length - 1].tanggal; // tanggal paling akhir
+      }
+
       // Judul
       doc
         .fontSize(16)
-        .text("Laporan Rekonsiliasi RKUD vs SIPD", { align: "center" });
+        .text("Laporan Rekonsiliasi Keuangan RKUD – SIPD", { align: "center" });
       doc.moveDown();
-      doc
-        .fontSize(12)
-        .text(
-          `Periode: ${moment(start).format("DD MMMM YYYY")} s/d ${moment(
-            end
-          ).format("DD MMMM YYYY")}`
-        );
+      if (startDate && endDate) {
+        doc
+          .fontSize(12)
+          .text(
+            `Periode: ${moment(startDate).format("DD MMMM YYYY")} s/d ${moment(
+              endDate
+            ).format("DD MMMM YYYY")}`
+          );
+      } else {
+        doc.fontSize(12).text("Periode: -");
+      }
       doc.moveDown(2);
 
       // Tabel
@@ -139,7 +160,7 @@ class SaldoController {
           },
         ],
         datas: filtered.map((row) => ({
-          tanggal: moment(row.tanggal).format("YYYY-MM-DD"),
+          tanggal: moment(row.tanggal).format("DD MMM YYYY"),
           rkud_in: formatRupiah(row.penerimaan_rkud),
           sipd_in: formatRupiah(row.penerimaan_sipd),
           in_status:
@@ -173,47 +194,44 @@ class SaldoController {
         0
       );
 
-      // Ringkasan (rapi 2 kolom)
-      doc.moveDown(2);
-      doc.fontSize(12).text("Ringkasan:", { underline: true });
-
-      // Penerimaan RKUD
-      doc.moveDown(0.5);
-      doc.font("Helvetica-Bold").text("Total Penerimaan RKUD:");
-      doc.font("Helvetica").text(formatRupiah(totalRKUDIn), { align: "right" });
-
-      // Penerimaan SIPD
-      doc.moveDown(0.5);
-      doc.font("Helvetica-Bold").text("Total Penerimaan SIPD:");
-      doc.font("Helvetica").text(formatRupiah(totalSIPDIn), { align: "right" });
-
-      // Selisih Penerimaan
-      doc.moveDown(0.5);
-      doc.font("Helvetica-Bold").text("Selisih Penerimaan:");
-      doc
-        .font("Helvetica")
-        .text(formatRupiah(totalRKUDIn - totalSIPDIn), { align: "right" });
-
-      // Pengeluaran RKUD
-      doc.moveDown(0.5);
-      doc.font("Helvetica-Bold").text("Total Pengeluaran RKUD:");
-      doc
-        .font("Helvetica")
-        .text(formatRupiah(totalRKUDOut), { align: "right" });
-
-      // Pengeluaran SIPD
-      doc.moveDown(0.5);
-      doc.font("Helvetica-Bold").text("Total Pengeluaran SIPD:");
-      doc
-        .font("Helvetica")
-        .text(formatRupiah(totalSIPDOut), { align: "right" });
-
-      // Selisih Pengeluaran
-      doc.moveDown(0.5);
-      doc.font("Helvetica-Bold").text("Selisih Pengeluaran:");
-      doc
-        .font("Helvetica")
-        .text(formatRupiah(totalRKUDOut - totalSIPDOut), { align: "right" });
+      // Panggil row dengan alternating colors
+      let rowIndex = 0;
+      drawRow(
+        doc,
+        "Total Penerimaan RKUD:",
+        formatRupiah(totalRKUDIn),
+        rowIndex++ % 2
+      );
+      drawRow(
+        doc,
+        "Total Penerimaan SIPD:",
+        formatRupiah(totalSIPDIn),
+        rowIndex++ % 2
+      );
+      drawRow(
+        doc,
+        "Selisih Penerimaan:",
+        formatRupiah(totalRKUDIn - totalSIPDIn),
+        rowIndex++ % 2
+      );
+      drawRow(
+        doc,
+        "Total Pengeluaran RKUD:",
+        formatRupiah(totalRKUDOut),
+        rowIndex++ % 2
+      );
+      drawRow(
+        doc,
+        "Total Pengeluaran SIPD:",
+        formatRupiah(totalSIPDOut),
+        rowIndex++ % 2
+      );
+      drawRow(
+        doc,
+        "Selisih Pengeluaran:",
+        formatRupiah(totalRKUDOut - totalSIPDOut),
+        rowIndex++ % 2
+      );
 
       doc.end();
     } catch (err) {
