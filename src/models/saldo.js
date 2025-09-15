@@ -31,17 +31,6 @@ const Saldo = sequelize.define("Saldo", {
     type: DataTypes.DECIMAL(20, 2),
     defaultValue: 0,
   },
-
-  // langsung mapping ke kolom database (GENERATED ALWAYS AS di SQL)
-  selisih_penerimaan: {
-    type: DataTypes.DECIMAL(20, 2),
-  },
-  selisih_pengeluaran: {
-    type: DataTypes.DECIMAL(20, 2),
-  },
-  keterangan: {
-    type: DataTypes.STRING(255),
-  },
 }, {
   tableName: "saldo",
   timestamps: true,

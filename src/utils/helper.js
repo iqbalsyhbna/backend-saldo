@@ -18,3 +18,16 @@ export function enrichSaldo(item) {
         : "Penerimaan & Pengeluaran tidak sesuai",
   };
 }
+
+export function parseNumber(value) {
+  if (!value) return 0;
+  return parseFloat(
+    value.toString()
+      .replace(/\./g, "")   // hapus pemisah ribuan
+      .replace(",", ".")    // ubah koma jadi titik (decimal)
+  ) || 0;
+}
+
+export function formatRupiah(num) {
+  return "Rp. " + num.toLocaleString("id-ID", { minimumFractionDigits: 2 });
+}

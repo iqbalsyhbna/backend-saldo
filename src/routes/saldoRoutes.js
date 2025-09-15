@@ -17,4 +17,7 @@ router.put("/:id", saldoController.update);
 // Hapus saldo
 router.delete("/:id", saldoController.delete);
 
+// Export Rekonsiliasi ke PDF
+router.get("/export/rekon/pdf", saldoController.exportRekonPdf);
+
 module.exports = router;
