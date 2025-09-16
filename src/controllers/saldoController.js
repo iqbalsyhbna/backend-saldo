@@ -121,42 +121,42 @@ class SaldoController {
       // Tabel
       const table = {
         headers: [
-          { label: "Tanggal", property: "tanggal", width: 70, align: "center" },
+          { label: "Tanggal", property: "tanggal", width: 50, align: "left" },
           {
             label: "Penerimaan RKUD",
             property: "rkud_in",
-            width: 90,
-            align: "right",
+            width: 100,
+            align: "left",
           },
           {
             label: "Penerimaan SIPD",
             property: "sipd_in",
-            width: 90,
-            align: "right",
+            width: 100,
+            align: "left",
           },
           {
             label: "Status",
             property: "in_status",
-            width: 60,
-            align: "center",
+            width: 50,
+            align: "left",
           },
           {
             label: "Pengeluaran RKUD",
             property: "rkud_out",
-            width: 90,
-            align: "right",
+            width: 100,
+            align: "left",
           },
           {
             label: "Pengeluaran SIPD",
             property: "sipd_out",
-            width: 90,
-            align: "right",
+            width: 100,
+            align: "left",
           },
           {
             label: "Status",
             property: "out_status",
-            width: 60,
-            align: "center",
+            width: 40,
+            align: "left",
           },
         ],
         datas: filtered.map((row) => ({
