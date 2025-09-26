@@ -74,10 +74,10 @@ class SaldoController {
 
       const filtered = data.map((row) => ({
         tanggal: row.tanggal,
-        penerimaan_rkud: parseNumber(row.penerimaan_rkud),
-        pengeluaran_rkud: parseNumber(row.pengeluaran_rkud),
-        penerimaan_sipd: parseNumber(row.penerimaan_sipd),
-        pengeluaran_sipd: parseNumber(row.pengeluaran_sipd),
+        penerimaan_rkud: Number(row.penerimaan_rkud),
+        pengeluaran_rkud: Number(row.pengeluaran_rkud),
+        penerimaan_sipd: Number(row.penerimaan_sipd),
+        pengeluaran_sipd: Number(row.pengeluaran_sipd),
       }));
 
       const doc = new PDFDocument({ margin: 30, size: "A4" });
@@ -232,6 +232,50 @@ class SaldoController {
         formatRupiah(totalRKUDOut - totalSIPDOut),
         rowIndex++ % 2
       );
+
+      // Tambah jarak dari tabel ringkasan
+      doc.moveDown(2);
+
+      // Tentukan isi keterangan (custom bisa dinamis juga)
+      const keteranganList = [];
+
+      if (totalRKUDIn !== totalSIPDIn) {
+        keteranganList.push("Penerimaan tidak sesuai");
+      }
+
+      if (totalRKUDOut !== totalSIPDOut) {
+        keteranganList.push("Pengeluaran tidak sesuai");
+      }
+
+      // Kalau tidak ada masalah
+      if (keteranganList.length === 0) {
+        keteranganList.push("Sesuai");
+      }
+
+      // Hitung posisi kotak
+      const pageWidth = doc.page.width;
+      const margin = doc.page.margins.left; // otomatis 30 sesuai setting awal
+      const startX = margin;
+      const startY = doc.y;
+      const boxWidth = pageWidth - margin * 2;
+      const lineHeight = 16;
+
+      // Hitung tinggi kotak (judul + isi)
+      const boxHeight = (keteranganList.length + 1) * lineHeight + 10;
+
+      // Gambar kotak
+      doc.rect(startX, startY, boxWidth, boxHeight).stroke();
+
+      // Tulis judul "Keterangan"
+      doc
+        .fontSize(12)
+        .fillColor("black")
+        .text("Keterangan", startX + 10, startY + 8);
+
+      // Tulis daftar keterangan
+      keteranganList.forEach((item, i) => {
+        doc.text(`- ${item}`, startX + 10, startY + 8 + lineHeight * (i + 1));
+      });
 
       doc.end();
     } catch (err) {
