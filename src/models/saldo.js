@@ -31,6 +31,10 @@ const Saldo = sequelize.define("Saldo", {
     type: DataTypes.DECIMAL(20, 2),
     defaultValue: 0,
   },
+  keterangan: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
 }, {
   tableName: "saldo",
   timestamps: true,

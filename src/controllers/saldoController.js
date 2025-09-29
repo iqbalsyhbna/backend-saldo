@@ -1,9 +1,5 @@
 const saldoService = require("../services/saldoService");
-const {
-  enrichSaldo,
-  formatRupiah,
-  drawRow,
-} = require("../utils/helper");
+const { enrichSaldo, formatRupiah, drawRow } = require("../utils/helper");
 const { successResponse, errorResponse } = require("../utils/response");
 const PDFDocument = require("pdfkit-table");
 const moment = require("moment");
@@ -37,8 +33,8 @@ class SaldoController {
     try {
       const data = await saldoService.getById(req.params.id);
       if (!data) return errorResponse(res, "Data tidak ditemukan", 404);
-      const enriched = enrichSaldo(data);
-      return successResponse(res, enriched);
+      // const enriched = enrichSaldo(data);
+      return successResponse(res, data);
     } catch (err) {
       return errorResponse(res, err.message);
     }
@@ -77,6 +73,7 @@ class SaldoController {
         pengeluaran_rkud: Number(row.pengeluaran_rkud),
         penerimaan_sipd: Number(row.penerimaan_sipd),
         pengeluaran_sipd: Number(row.pengeluaran_sipd),
+        keterangan: row.keterangan || "",
       }));
 
       const doc = new PDFDocument({ margin: 30, size: "A4" });
@@ -246,7 +243,7 @@ class SaldoController {
       }
 
       // Tentukan isi keterangan (custom bisa dinamis juga)
-      const keteranganList = [];
+      let keteranganList = [];
 
       if (totalRKUDIn !== totalSIPDIn) {
         keteranganList.push("Penerimaan tidak sesuai");
@@ -261,6 +258,15 @@ class SaldoController {
         keteranganList.push("Sesuai");
       }
 
+      // Tambahkan keterangan dari DB
+      filtered.forEach((row) => {
+        if (row.keterangan) {
+          keteranganList.push(
+            `[${moment(row.tanggal).format("DD MMM YYYY")}] ${row.keterangan}`
+          );
+        }
+      });
+
       // Kotak keterangan
       const pageWidth = doc.page.width;
       const margin = doc.page.margins.left;
@@ -269,7 +275,7 @@ class SaldoController {
       const boxWidth = pageWidth - margin * 2;
       const lineHeight = 16;
 
-      // Hitung tinggi kotak (judul + isi)
+      // ✅ Hitung tinggi kotak (judul + semua isi)
       const boxHeight = (keteranganList.length + 1) * lineHeight + 10;
 
       // Gambar kotak
@@ -281,10 +287,17 @@ class SaldoController {
         .fillColor("black")
         .text("Keterangan", startX + 10, startY + 8);
 
-      // Tulis daftar keterangan
-      keteranganList.forEach((item, i) => {
-        doc.text(`- ${item}`, startX + 10, startY + 8 + lineHeight * (i + 1));
+      // Mulai posisi isi setelah judul
+      let currentY = startY + 8 + lineHeight;
+
+      // ✅ Tulis daftar keterangan (semua isi)
+      keteranganList.forEach((item) => {
+        doc.text(`- ${item}`, startX + 10, currentY);
+        currentY += lineHeight;
       });
+
+      // Geser pointer doc.y agar elemen selanjutnya tidak menimpa kotak
+      doc.moveDown(keteranganList.length + 1);
 
       doc.end();
     } catch (err) {
