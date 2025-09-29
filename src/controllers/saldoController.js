@@ -1,7 +1,6 @@
 const saldoService = require("../services/saldoService");
 const {
   enrichSaldo,
-  parseNumber,
   formatRupiah,
   drawRow,
 } = require("../utils/helper");
