@@ -176,6 +176,12 @@ class SaldoController {
 
       await doc.table(table);
 
+      // Cek apakah ada cukup ruang untuk ringkasan + keterangan
+      const neededSpace = 200; // tinggi kira-kira untuk ringkasan + kotak keterangan
+      if (doc.y + neededSpace > doc.page.height - doc.page.margins.bottom) {
+        doc.addPage();
+      }
+
       // Ringkasan
       const totalRKUDIn = filtered.reduce(
         (acc, r) => acc + r.penerimaan_rkud,
@@ -233,8 +239,12 @@ class SaldoController {
         rowIndex++ % 2
       );
 
-      // Tambah jarak dari tabel ringkasan
       doc.moveDown(2);
+
+      // Sama juga sebelum kotak keterangan
+      if (doc.y + 100 > doc.page.height - doc.page.margins.bottom) {
+        doc.addPage();
+      }
 
       // Tentukan isi keterangan (custom bisa dinamis juga)
       const keteranganList = [];
@@ -252,9 +262,9 @@ class SaldoController {
         keteranganList.push("Sesuai");
       }
 
-      // Hitung posisi kotak
+      // Kotak keterangan
       const pageWidth = doc.page.width;
-      const margin = doc.page.margins.left; // otomatis 30 sesuai setting awal
+      const margin = doc.page.margins.left;
       const startX = margin;
       const startY = doc.y;
       const boxWidth = pageWidth - margin * 2;
