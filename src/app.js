@@ -1,8 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors"); // <--- tambahkan ini
-const saldoRoutes = require("./routes/saldoRoutes");
 const sequelize = require("./config/database");
+const routes = require("./routes");
 
 const app = express();
 
@@ -11,7 +11,7 @@ app.use(bodyParser.json());
 app.use(cors()); // <--- aktifkan CORS (default: allow all origins)
 
 // Routes
-app.use("/api/saldo", saldoRoutes);
+app.use("/api", routes);
 
 // Sync DB
 sequelize
