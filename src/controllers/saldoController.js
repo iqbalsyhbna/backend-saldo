@@ -267,37 +267,59 @@ class SaldoController {
         }
       });
 
-      // Kotak keterangan
       const pageWidth = doc.page.width;
       const margin = doc.page.margins.left;
       const startX = margin;
       const startY = doc.y;
       const boxWidth = pageWidth - margin * 2;
-      const lineHeight = 16;
+      const lineGap = 6;
 
-      // ✅ Hitung tinggi kotak (judul + semua isi)
-      const boxHeight = (keteranganList.length + 1) * lineHeight + 10;
+      // Hitung tinggi teks secara dinamis
+      let totalTextHeight = doc.heightOfString("Keterangan", {
+        width: boxWidth - 20,
+      });
+
+      keteranganList.forEach((item) => {
+        totalTextHeight +=
+          doc.heightOfString(`- ${item}`, {
+            width: boxWidth - 20,
+          }) + lineGap;
+      });
+
+      // Tambahkan padding atas dan bawah
+      const padding = 10;
+      const boxHeight = totalTextHeight + padding * 2;
 
       // Gambar kotak
       doc.rect(startX, startY, boxWidth, boxHeight).stroke();
 
       // Tulis judul "Keterangan"
+      let currentY = startY + padding;
       doc
         .fontSize(12)
         .fillColor("black")
-        .text("Keterangan", startX + 10, startY + 8);
+        .text("Keterangan", startX + 10, currentY, {
+          width: boxWidth - 20,
+        });
+      currentY +=
+        doc.heightOfString("Keterangan", {
+          width: boxWidth - 20,
+        }) + lineGap;
 
-      // Mulai posisi isi setelah judul
-      let currentY = startY + 8 + lineHeight;
-
-      // ✅ Tulis daftar keterangan (semua isi)
+      // Tulis daftar keterangan
       keteranganList.forEach((item) => {
-        doc.text(`- ${item}`, startX + 10, currentY);
-        currentY += lineHeight;
+        const textHeight = doc.heightOfString(`- ${item}`, {
+          width: boxWidth - 20,
+        });
+        doc.text(`- ${item}`, startX + 10, currentY, {
+          width: boxWidth - 20,
+        });
+        currentY += textHeight + lineGap;
       });
 
-      // Geser pointer doc.y agar elemen selanjutnya tidak menimpa kotak
-      doc.moveDown(keteranganList.length + 1);
+      // Geser pointer doc.y agar elemen berikutnya tidak menimpa kotak
+      doc.moveTo(startX, startY + boxHeight);
+      doc.moveDown();
 
       doc.end();
     } catch (err) {
