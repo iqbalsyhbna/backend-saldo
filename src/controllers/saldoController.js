@@ -1,4 +1,5 @@
 const saldoService = require("../services/saldoService");
+const { UniqueConstraintError } = require("sequelize");
 const { enrichSaldo, formatRupiah, drawRow } = require("../utils/helper");
 const { successResponse, errorResponse } = require("../utils/response");
 const PDFDocument = require("pdfkit-table");
@@ -11,7 +12,18 @@ class SaldoController {
       const data = await saldoService.create(req.body);
       return successResponse(res, data, "Saldo berhasil ditambahkan");
     } catch (err) {
-      return errorResponse(res, err.message);
+      // 🔥 HANDLE DUPLICATE TANGGAL
+      if (err instanceof UniqueConstraintError) {
+        return errorResponse(
+          res,
+          `Data saldo untuk tanggal ${req.body.tanggal} sudah ada. Silakan lakukan update.`,
+        );
+      }
+
+      return errorResponse(
+        res,
+        err.message || "Terjadi kesalahan saat menyimpan saldo",
+      );
     }
   }
 
@@ -80,7 +92,7 @@ class SaldoController {
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader(
         "Content-Disposition",
-        "attachment; filename=rekonsiliasi.pdf"
+        "attachment; filename=rekonsiliasi.pdf",
       );
       doc.pipe(res);
 
@@ -90,7 +102,7 @@ class SaldoController {
 
       if ((!startDate || !endDate) && filtered.length > 0) {
         const sorted = [...filtered].sort(
-          (a, b) => new Date(a.tanggal) - new Date(b.tanggal)
+          (a, b) => new Date(a.tanggal) - new Date(b.tanggal),
         );
         startDate = sorted[0].tanggal; // tanggal paling awal
         endDate = sorted[sorted.length - 1].tanggal; // tanggal paling akhir
@@ -106,8 +118,8 @@ class SaldoController {
           .fontSize(12)
           .text(
             `Periode: ${moment(startDate).format("DD MMMM YYYY")} s/d ${moment(
-              endDate
-            ).format("DD MMMM YYYY")}`
+              endDate,
+            ).format("DD MMMM YYYY")}`,
           );
       } else {
         doc.fontSize(12).text("Periode: -");
@@ -181,19 +193,19 @@ class SaldoController {
       // Ringkasan
       const totalRKUDIn = filtered.reduce(
         (acc, r) => acc + r.penerimaan_rkud,
-        0
+        0,
       );
       const totalSIPDIn = filtered.reduce(
         (acc, r) => acc + r.penerimaan_sipd,
-        0
+        0,
       );
       const totalRKUDOut = filtered.reduce(
         (acc, r) => acc + r.pengeluaran_rkud,
-        0
+        0,
       );
       const totalSIPDOut = filtered.reduce(
         (acc, r) => acc + r.pengeluaran_sipd,
-        0
+        0,
       );
 
       // Panggil row dengan alternating colors
@@ -202,37 +214,37 @@ class SaldoController {
         doc,
         "Total Penerimaan RKUD:",
         formatRupiah(totalRKUDIn),
-        rowIndex++ % 2
+        rowIndex++ % 2,
       );
       drawRow(
         doc,
         "Total Penerimaan SIPD:",
         formatRupiah(totalSIPDIn),
-        rowIndex++ % 2
+        rowIndex++ % 2,
       );
       drawRow(
         doc,
         "Selisih Penerimaan:",
         formatRupiah(totalRKUDIn - totalSIPDIn),
-        rowIndex++ % 2
+        rowIndex++ % 2,
       );
       drawRow(
         doc,
         "Total Pengeluaran RKUD:",
         formatRupiah(totalRKUDOut),
-        rowIndex++ % 2
+        rowIndex++ % 2,
       );
       drawRow(
         doc,
         "Total Pengeluaran SIPD:",
         formatRupiah(totalSIPDOut),
-        rowIndex++ % 2
+        rowIndex++ % 2,
       );
       drawRow(
         doc,
         "Selisih Pengeluaran:",
         formatRupiah(totalRKUDOut - totalSIPDOut),
-        rowIndex++ % 2
+        rowIndex++ % 2,
       );
 
       doc.moveDown(2);
@@ -262,7 +274,7 @@ class SaldoController {
       filtered.forEach((row) => {
         if (row.keterangan) {
           keteranganList.push(
-            `[${moment(row.tanggal).format("DD MMM YYYY")}] ${row.keterangan}`
+            `[${moment(row.tanggal).format("DD MMM YYYY")}] ${row.keterangan}`,
           );
         }
       });
