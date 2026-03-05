@@ -4,46 +4,41 @@ const extractSaldoData = async (buffer) => {
   const {
     data: { text },
   } = await Tesseract.recognize(buffer, "eng", {
-    logger: (m) => console.log(m),
-
-    // 🔥 Batasi karakter agar OCR lebih akurat
-    tessedit_char_whitelist:
-      "0123456789.,TOTALPENGELUARANSALDOabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    tessedit_pageseg_mode: 6,
   });
 
+  // 🔥 Clean angka Indonesia
   const cleanNumber = (str) => {
     if (!str) return 0;
 
-    str = str.trim();
-    str = str.replace(/[^\d.,]/g, "");
-    str = str.replace(/\s+/g, "");
-
-    // hapus titik ribuan
-    str = str.replace(/\./g, "");
-
-    // ubah koma jadi decimal
-    str = str.replace(",", ".");
-
-    return parseFloat(str) || 0;
+    return parseFloat(
+      str
+        .replace(/[^\d.,]/g, "")
+        .replace(/\./g, "") // hapus ribuan
+        .replace(",", ".") // ubah decimal
+    ) || 0;
   };
 
-  const totalPenerimaanMatch = text.match(
-    /TOTAL\s*PENERIMAAN[\s\S]{0,50}?([\d.,\s]+)/i
-  );
+  // 🔥 Ambil angka pertama setelah keyword di baris yang sama
+  const extractFromLine = (keyword) => {
+    const regex = new RegExp(
+      `${keyword}[^\\n\\r]*?([\\d.]+,[\\d]+)`,
+      "i"
+    );
 
-  const totalPengeluaranMatch = text.match(
-    /TOTAL\s*PENGELUARAN[\s\S]{0,50}?([\d.,\s]+)/i
-  );
+    const match = text.match(regex);
+    return cleanNumber(match?.[1]);
+  };
 
-  const saldoMatch = text.match(
-    /SALDO[\s\S]{0,50}?([\d.,\s]+)/i
-  );
+  const total_penerimaan = extractFromLine("TOTAL\\s*PENERIMAAN");
+  const total_pengeluaran = extractFromLine("TOTAL\\s*PENGELUARAN");
+  const saldo = extractFromLine("SALDO");
 
   return {
     raw_text: text,
-    total_penerimaan: cleanNumber(totalPenerimaanMatch?.[1]),
-    total_pengeluaran: cleanNumber(totalPengeluaranMatch?.[1]),
-    saldo: cleanNumber(saldoMatch?.[1]),
+    total_penerimaan,
+    total_pengeluaran,
+    saldo,
   };
 };
 
